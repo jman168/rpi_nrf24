@@ -51,4 +51,22 @@ int nrf24_get_register(nrf24_t *dev, uint8_t reg, uint8_t *data, uint8_t len) {
 int nrf24_set_register(nrf24_t *dev, uint8_t reg, uint8_t *data, uint8_t len) {
     struct spi_ioc_transfer	transaction;
     memset(&transaction, 0, sizeof(transaction));
+
+    uint8_t tx[len+1];
+
+    memset(tx, 0, len+1);
+
+    tx[0] = NRF24_CMD_W_REGISTER | (reg & NRF24_REGISTER_MASK);
+    memcpy(&tx[1], data, len);
+
+    transaction.tx_buf = (uint64_t)tx;
+    transaction.len = len+1;
+
+    int ret = ioctl(dev->fd, SPI_IOC_MESSAGE(1), &transaction);
+    if(ret < 0) {
+        perror("IO");
+        return -1;
+    }
+
+    return 0;
 }
