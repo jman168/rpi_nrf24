@@ -26,6 +26,9 @@ int nrf24_free(nrf24_t *dev);
 int nrf24_get_register(nrf24_t *dev, uint8_t reg, uint8_t *data, uint8_t len);
 int nrf24_set_register(nrf24_t *dev, uint8_t reg, uint8_t *data, uint8_t len);
 
+int nrf24_flush_tx(nrf24_t *dev);
+int nrf24_flush_rx(nrf24_t *dev);
+
 #ifdef __cplusplus
 }
 #endif

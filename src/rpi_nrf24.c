@@ -70,3 +70,41 @@ int nrf24_set_register(nrf24_t *dev, uint8_t reg, uint8_t *data, uint8_t len) {
 
     return 0;
 }
+
+int nrf24_flush_tx(nrf24_t *dev) {
+    struct spi_ioc_transfer	transaction;
+    memset(&transaction, 0, sizeof(transaction));
+
+    uint8_t tx = NRF24_CMD_FLUSH_TX;
+
+    transaction.tx_buf = (uint64_t)&tx;
+    
+    transaction.len = 1;
+
+    int ret = ioctl(dev->fd, SPI_IOC_MESSAGE(1), &transaction);
+    if(ret < 0) {
+        perror("IO");
+        return -1;
+    }
+
+    return 0;
+}
+
+int nrf24_flush_rx(nrf24_t *dev) {
+    struct spi_ioc_transfer	transaction;
+    memset(&transaction, 0, sizeof(transaction));
+
+    uint8_t tx = NRF24_CMD_FLUSH_RX;
+
+    transaction.tx_buf = (uint64_t)&tx;
+    
+    transaction.len = 1;
+
+    int ret = ioctl(dev->fd, SPI_IOC_MESSAGE(1), &transaction);
+    if(ret < 0) {
+        perror("IO");
+        return -1;
+    }
+
+    return 0;
+}
