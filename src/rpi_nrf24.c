@@ -247,3 +247,91 @@ int nrf24_set_rf_channel(nrf24_t *dev, uint8_t channel) {
     nrf24_set_register(dev, NRF24_REG_RF_CH, &rf_ch, 1);
     return 0;
 }
+
+int nrf24_enable_rx_pipe(nrf24_t *dev, enum nrf24_data_pipe_t pipe) {
+    uint8_t en_rxaddr;
+    nrf24_get_register(dev, NRF24_REG_EN_RXADDR, &en_rxaddr, 1);
+
+    switch (pipe)
+    {
+        case NRF24_P0:
+            en_rxaddr = en_rxaddr | NRF24_MASK_ERX_P0;
+            break;
+        
+        case NRF24_P1:
+            en_rxaddr = en_rxaddr | NRF24_MASK_ERX_P1;
+            break;
+
+        case NRF24_P2:
+            en_rxaddr = en_rxaddr | NRF24_MASK_ERX_P2;
+            break;
+
+        case NRF24_P3:
+            en_rxaddr = en_rxaddr | NRF24_MASK_ERX_P3;
+            break;
+
+        case NRF24_P4:
+            en_rxaddr = en_rxaddr | NRF24_MASK_ERX_P4;
+            break;
+
+        case NRF24_P5:
+            en_rxaddr = en_rxaddr | NRF24_MASK_ERX_P5;
+            break;
+
+        case NRF24_ALL_PIPES:
+            en_rxaddr = en_rxaddr | NRF24_MASK_ERX_ALL;
+            break;
+    
+        default:
+            printf("Invalid pipe, valid pipes are P0-P5 and all pipes.\n");
+            return -1;
+            break;
+    }
+
+    nrf24_set_register(dev, NRF24_REG_EN_RXADDR, &en_rxaddr, 1);
+    return 0;
+}
+
+int nrf24_disable_rx_pipe(nrf24_t *dev, enum nrf24_data_pipe_t pipe) {
+    uint8_t en_rxaddr;
+    nrf24_get_register(dev, NRF24_REG_EN_RXADDR, &en_rxaddr, 1);
+
+    switch (pipe)
+    {
+        case NRF24_P0:
+            en_rxaddr = en_rxaddr & (~NRF24_MASK_ERX_P0);
+            break;
+        
+        case NRF24_P1:
+            en_rxaddr = en_rxaddr & (~NRF24_MASK_ERX_P1);
+            break;
+
+        case NRF24_P2:
+            en_rxaddr = en_rxaddr & (~NRF24_MASK_ERX_P2);
+            break;
+
+        case NRF24_P3:
+            en_rxaddr = en_rxaddr & (~NRF24_MASK_ERX_P3);
+            break;
+
+        case NRF24_P4:
+            en_rxaddr = en_rxaddr & (~NRF24_MASK_ERX_P4);
+            break;
+
+        case NRF24_P5:
+            en_rxaddr = en_rxaddr & (~NRF24_MASK_ERX_P5);
+            break;
+
+        case NRF24_ALL_PIPES:
+            en_rxaddr = en_rxaddr & (~NRF24_MASK_ERX_ALL);
+            break;
+    
+        default:
+            printf("Invalid pipe, valid pipes are P0-P5 and all pipes.\n");
+            return -1;
+            break;
+    }
+
+    nrf24_set_register(dev, NRF24_REG_EN_RXADDR, &en_rxaddr, 1);
+    return 0;
+}

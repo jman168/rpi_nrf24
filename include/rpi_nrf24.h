@@ -47,6 +47,16 @@ enum nrf24_crc_t {
     NRF24_CRC_2BYTES
 };
 
+enum nrf24_data_pipe_t {
+    NRF24_P0 = 0,
+    NRF24_P1,
+    NRF24_P2,
+    NRF24_P3,
+    NRF24_P4,
+    NRF24_P5,
+    NRF24_ALL_PIPES
+};
+
 int nrf24_init(nrf24_t *dev, const char *path, int ce_io_num);
 int nrf24_free(nrf24_t *dev);
 
@@ -63,6 +73,9 @@ int nrf24_power_down(nrf24_t *dev);
 int nrf24_set_data_rate(nrf24_t *dev, enum nrf24_data_rate_t rate);
 int nrf24_set_crc(nrf24_t *dev, enum nrf24_crc_t crc);
 int nrf24_set_rf_channel(nrf24_t *dev, uint8_t channel);
+
+int nrf24_enable_rx_pipe(nrf24_t *dev, enum nrf24_data_pipe_t pipe);
+int nrf24_disable_rx_pipe(nrf24_t *dev, enum nrf24_data_pipe_t pipe);
 
 #ifdef __cplusplus
 }
