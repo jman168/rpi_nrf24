@@ -437,3 +437,98 @@ int nrf24_set_payload_length(nrf24_t *dev, uint8_t length) {
     }
     return 0;
 }
+
+int nrf24_send_data(nrf24_t *dev, uint8_t *data, uint8_t len) {
+    struct spi_ioc_transfer	transaction;
+    memset(&transaction, 0, sizeof(transaction));
+
+    uint8_t tx[len+1];
+    tx[0] = NRF24_CMD_W_TX_PAYLOAD;
+    memcpy(&tx[1], data, len);
+
+    transaction.tx_buf = (uint64_t)tx;
+    transaction.len = len+1;
+
+    int ret = ioctl(dev->fd, SPI_IOC_MESSAGE(1), &transaction);
+    if(ret < 0) {
+        perror("IO");
+        return -1;
+    }
+
+    return 0;
+}
+
+int nrf24_get_data_available(nrf24_t *dev) {
+    int ret;
+    
+    uint8_t status;
+    ret = nrf24_get_register(dev, NRF24_REG_STATUS, &status, 1);
+    if(ret != 0)
+        return -1;
+    
+    if((status & NRF24_MASK_RX_P_NO) != NRF24_MASK_RX_P_NO)
+        return 1;
+    else
+        return 0;
+}
+
+
+int nrf24_get_data_length(nrf24_t *dev, uint8_t *len) {
+    struct spi_ioc_transfer	transaction;
+    memset(&transaction, 0, sizeof(transaction));
+
+    uint8_t tx[2];
+    uint8_t rx[2];
+
+    tx[0] = NRF24_CMD_R_RX_PL_WID;
+
+    transaction.tx_buf = (uint64_t)tx;
+    transaction.rx_buf = (uint64_t)rx;
+    transaction.len = 2;
+
+    int ret = ioctl(dev->fd, SPI_IOC_MESSAGE(1), &transaction);
+    if(ret < 0) {
+        perror("IO");
+        return -1;
+    }
+
+    *len = rx[1];
+    return 0;
+}
+
+int nrf24_get_data(nrf24_t *dev, uint8_t *data, uint8_t *len) {
+    GPIO_CLR(dev->gpio) = 1<<dev->ce_io_num;
+
+    if(nrf24_get_data_length(dev, len) != 0) {
+        printf("Error getting payload length.\n");
+        return -1;
+    }
+
+    if(*len > 32) {
+        printf("Got a payload width of greater than 32, clearing FIFO.\n");
+        nrf24_flush_rx(dev);
+        return 0;
+    }
+
+    struct spi_ioc_transfer	transaction;
+    memset(&transaction, 0, sizeof(transaction));
+
+    uint8_t tx[*len+1];
+    uint8_t rx[*len+1];
+    tx[0] = NRF24_CMD_R_RX_PAYLOAD;
+
+    transaction.tx_buf = (uint64_t)tx;
+    transaction.rx_buf = (uint64_t)rx;
+    transaction.len = *len+1;
+    
+    int ret = ioctl(dev->fd, SPI_IOC_MESSAGE(1), &transaction);
+    if(ret < 0) {
+        perror("IO");
+        return -1;
+    }
+
+    memcpy(data, &rx[1], *len);
+
+    GPIO_SET(dev->gpio) = 1<<dev->ce_io_num;
+    return 0;
+}
