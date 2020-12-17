@@ -335,3 +335,105 @@ int nrf24_disable_rx_pipe(nrf24_t *dev, enum nrf24_data_pipe_t pipe) {
     nrf24_set_register(dev, NRF24_REG_EN_RXADDR, &en_rxaddr, 1);
     return 0;
 }
+
+void nrf24_flip_bytes(uint8_t *data, size_t len) {
+    uint8_t temp;
+    for(int i = 0; i < len/2; i++) {
+        temp = data[i];
+        data[i] = data[(len-1)-i];
+        data[(len-1)-i] = temp;
+    }
+}
+
+int nrf24_set_rx_address(nrf24_t *dev, enum nrf24_data_pipe_t pipe, uint8_t *address, uint8_t address_length) {
+    if(address_length > 5 || address_length < 3) {
+        printf("Invalid address length, valid address lengths are 3-5.\n");
+        return -1;
+    }
+    
+    nrf24_flip_bytes(address, address_length);
+    
+    if(pipe == NRF24_P0) {
+        nrf24_set_register(dev, NRF24_REG_RX_ADDR_P0, address, address_length);
+    }
+    
+    else if(pipe == NRF24_P1) {
+        nrf24_set_register(dev, NRF24_REG_RX_ADDR_P1, address, address_length);
+    }
+    
+    else {
+        uint8_t rx_addr_p1[address_length];
+        nrf24_get_register(dev, NRF24_REG_RX_ADDR_P1, rx_addr_p1, address_length);
+        memcpy(&address[1], &rx_addr_p1[1], address_length-1);
+        nrf24_set_register(dev, NRF24_REG_RX_ADDR_P1, rx_addr_p1, address_length);
+
+        switch (pipe)
+        {
+            case NRF24_P2:
+                nrf24_set_register(dev, NRF24_REG_RX_ADDR_P2, &address[0], 1);
+                break;
+
+            case NRF24_P3:
+                nrf24_set_register(dev, NRF24_REG_RX_ADDR_P3, &address[0], 1);
+                break;
+            
+            case NRF24_P4:
+                nrf24_set_register(dev, NRF24_REG_RX_ADDR_P4, &address[0], 1);
+                break;
+
+            case NRF24_P5:
+                nrf24_set_register(dev, NRF24_REG_RX_ADDR_P5, &address[0], 1);
+                break;
+            
+            default:
+                printf("Invalid pipe, valid pipes are P0-P5.\n");
+                return -2;
+                break;
+        }
+    }
+    return 0;
+}
+
+int nrf24_set_tx_address(nrf24_t *dev, uint8_t *address, uint8_t address_length) {
+    if(address_length > 5 || address_length < 3) {
+        printf("Invalid address length, valid address lengths are 3-5.\n");
+        return -1;
+    }
+    
+    nrf24_flip_bytes(address, address_length);
+
+    nrf24_set_register(dev, NRF24_REG_RX_ADDR_P0, address, address_length);
+    nrf24_set_register(dev, NRF24_REG_TX_ADDR, address, address_length);
+    return 0;
+}
+
+int nrf24_set_payload_length(nrf24_t *dev, uint8_t length) {
+    if(length > 32) {
+        printf("Invalid payload length, valid lengths are 0-32 (0 being dynamic payload length).\n");
+        return -1;
+    }
+
+    if(length == 0) {
+        uint8_t features;
+        nrf24_get_register(dev, NRF24_REG_FEATURE, &features, 1);
+        features = features | NRF24_MASK_EN_DPL;
+        nrf24_set_register(dev, NRF24_REG_FEATURE, &features, 1);
+        uint8_t dynpd = 0b00111111;
+        nrf24_set_register(dev, NRF24_REG_DYNPD, &dynpd, 1);
+    } else {
+        uint8_t features;
+        nrf24_get_register(dev, NRF24_REG_FEATURE, &features, 1);
+        features = features & (~NRF24_MASK_EN_DPL);
+        nrf24_set_register(dev, NRF24_REG_FEATURE, &features, 1);
+        uint8_t dynpd = 0;
+        nrf24_set_register(dev, NRF24_REG_DYNPD, &dynpd, 1);
+        length = length & NRF24_MASK_RX_PW_P; // Technically this isn't needed because of the if at the beginining, but just in case
+        nrf24_set_register(dev, NRF24_REG_RX_PW_P0, &length, 1);
+        nrf24_set_register(dev, NRF24_REG_RX_PW_P1, &length, 1);
+        nrf24_set_register(dev, NRF24_REG_RX_PW_P2, &length, 1);
+        nrf24_set_register(dev, NRF24_REG_RX_PW_P3, &length, 1);
+        nrf24_set_register(dev, NRF24_REG_RX_PW_P4, &length, 1);
+        nrf24_set_register(dev, NRF24_REG_RX_PW_P5, &length, 1);
+    }
+    return 0;
+}
