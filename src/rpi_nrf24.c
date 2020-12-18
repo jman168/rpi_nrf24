@@ -12,7 +12,7 @@ int nrf24_init(nrf24_t *dev, const char *path, int ce_io_num) {
     ioctl(dev->fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
     
     int mem_fd;
-    if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
+    if ((mem_fd = open("/dev/gpiomem", O_RDWR|O_SYNC) ) < 0) {
         perror("GPIO");
         return -1;
     }
